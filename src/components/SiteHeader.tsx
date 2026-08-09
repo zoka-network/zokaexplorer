@@ -10,8 +10,10 @@ import {
   type NetworkId,
 } from "@/lib/config";
 
-const ZSILENT_RELEASE =
-  "https://github.com/ZokaNetwork/zsilent-core/releases/latest";
+// Apunta al espejo de GitLab: la organizacion de GitHub esta suspendida y sus
+// enlaces devuelven 404, incluidos los de descarga. Los binarios publicados
+// viven en GitLab, asi que este boton lleva a un lugar que funciona.
+const ZSILENT_RELEASE = "https://gitlab.com/zokanetwork/zsilent-core/-/releases";
 
 const SiteHeader = () => {
   const [, rerender] = useState(0);
