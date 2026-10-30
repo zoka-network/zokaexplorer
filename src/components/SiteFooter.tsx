@@ -1,54 +1,21 @@
-import { Github, Gitlab, Twitter, Globe, MessageCircle } from "lucide-react";
+import { DISCORD, EXPLORER_REPO, ZOKA_SITE, ZSILENT_RELEASES } from "@/lib/config";
 
 const SiteFooter = () => (
-  <footer className="relative z-10 mx-auto max-w-5xl px-6 pb-10">
-    <div className="flex flex-col items-center justify-between gap-3 text-[11px] text-muted-foreground sm:flex-row">
-      <span>© {new Date().getFullYear()} zokaexplorer</span>
-      <div className="flex items-center gap-3">
-        <a
-          href="https://zoka.network"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="zoka.network"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <Globe className="h-3.5 w-3.5" />
+  <footer className="scan-footer">
+    <div className="scan-footer-inner">
+      <span>ZokaScan reads a Zoka node's public, read-only API. Test coins, no value.</span>
+      <div className="flex flex-wrap gap-5">
+        <a href={ZOKA_SITE} target="_blank" rel="noopener noreferrer">
+          zoka.network
         </a>
-        <a
-          href="https://discord.gg/uZRPcNb3m7"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Discord"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <MessageCircle className="h-3.5 w-3.5" />
+        <a href={ZSILENT_RELEASES} target="_blank" rel="noopener noreferrer">
+          ZSilent
         </a>
-        <a
-          href="https://gitlab.com/zokanetwork"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="GitLab"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <Gitlab className="h-3.5 w-3.5" />
+        <a href={EXPLORER_REPO} target="_blank" rel="noopener noreferrer">
+          Source
         </a>
-        <a
-          href="https://github.com/zoka-network"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="GitHub"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <Github className="h-3.5 w-3.5" />
-        </a>
-        <a
-          href="https://x.com/zokanetwork"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Twitter"
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <Twitter className="h-3.5 w-3.5" />
+        <a href={DISCORD} target="_blank" rel="noopener noreferrer">
+          Discord
         </a>
       </div>
     </div>

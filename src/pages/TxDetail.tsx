@@ -1,197 +1,108 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Clock3, Copy, ShieldCheck, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
-import { getTransaction } from "@/lib/api";
-import type { Transaction } from "@/lib/types";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import Copy from "@/components/Copy";
+import Layout from "@/components/Layout";
+import SearchBar from "@/components/SearchBar";
+import { api } from "@/lib/api";
+import { COINBASE_MATURITY } from "@/lib/config";
+import { formatBytes, formatInteger, formatUtc, formatZka, timeAgo } from "@/lib/format";
 
-const truncate = (s: string, head = 10, tail = 8) =>
-  s.length > head + tail + 1 ? `${s.slice(0, head)}…${s.slice(-tail)}` : s;
-
-const Field = ({
-  label, value, mono = false, copyable = false, link,
-}: {
-  label: string; value: React.ReactNode; mono?: boolean; copyable?: boolean; link?: string;
-}) => {
-  const onCopy = () => {
-    if (typeof value === "string") {
-      navigator.clipboard.writeText(value);
-      toast({ title: "Copied", description: truncate(value) });
-    }
-  };
-  const content = (
-    <span className={`min-w-0 flex-1 truncate text-sm text-foreground ${mono ? "font-mono-tight" : ""}`}>{value}</span>
-  );
-  return (
-    <div className="grid grid-cols-1 gap-1 border-b border-border px-5 py-4 last:border-b-0 sm:grid-cols-[180px_1fr] sm:gap-4 sm:items-center">
-      <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="flex items-center gap-2">
-        {link ? <Link to={link} className="text-signal hover:underline">{content}</Link> : content}
-        {copyable && (
-          <button onClick={onCopy} className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" aria-label="Copy">
-            <Copy className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
+// The node keeps no index by transaction id yet, so a transaction is found
+// through its block: the block page links here with ?block=height.
 const TxDetail = () => {
-  const { hash = "" } = useParams();
-  const [tx, setTx] = useState<Transaction | null>(null);
-  const [notIndexed, setNotIndexed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    setNotIndexed(false);
-    getTransaction(hash)
-      .then((t) => {
-        if (!t) {
-          setNotIndexed(true);
-          return;
-        }
-        setTx(t);
-      })
-      .catch((e) => setError(e.message || "Failed to load transaction"))
-      .finally(() => setLoading(false));
-  }, [hash]);
+  const { txid = "" } = useParams();
+  const [params] = useSearchParams();
+  const height = params.get("block") ?? "";
+  const block = useQuery({
+    queryKey: ["block", height],
+    queryFn: () => api.block(height),
+    enabled: /^\d+$/.test(height),
+    retry: false,
+  });
+  const tx = block.data?.transactions.find((entry) => entry.txid === txid.toLowerCase());
+  const b = block.data;
 
   return (
-    <main className="relative flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-50" aria-hidden />
-      <SiteHeader />
-
-      <section className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-6 pt-4 pb-12">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to search
-        </Link>
-
-        {error ? (
-          <div className="mt-12 text-center">
-            <p className="text-sm text-destructive">{error}</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>Retry</Button>
-          </div>
-        ) : loading ? (
-          <div className="mt-12 text-center text-muted-foreground text-sm">Loading transaction…</div>
-        ) : notIndexed ? (
-          <div className="mt-6 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-yellow-500/80">
-                  <Clock3 className="h-3 w-3" />
-                  Broadcast · Awaiting Confirmation
-                </div>
-                <h1 className="mt-3 text-sm font-medium text-muted-foreground">Private Transaction</h1>
-                <p className="font-mono-tight mt-1 break-all text-base text-foreground sm:text-lg">{hash}</p>
-              </div>
-              <Button variant="outline" size="sm" className="h-9 rounded-lg border-border bg-background text-xs shrink-0" onClick={() => { navigator.clipboard.writeText(hash); toast({ title: "Hash copied" }); }}>
-                <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
-              </Button>
-            </div>
-            <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
-              {[
-                { label: "Block", value: "Pending" },
-                { label: "Confirmations", value: "0" },
-                { label: "Type", value: "Private · Shielded" },
-              ].map((m) => (
-                <div key={m.label} className="bg-card px-4 py-3">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{m.label}</div>
-                  <div className="font-mono-tight mt-1.5 text-sm text-foreground">{m.value}</div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 space-y-2 rounded-lg border border-border bg-card px-5 py-4 text-sm text-muted-foreground">
-              <div className="flex items-start gap-2">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
-                <span>This transaction was broadcast to the network. Sender, receiver and amount are cryptographically hidden.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500/70" />
-                <span>It is not yet included in a mined block. Once a miner confirms it, this page will show full zk-SNARK proof details. Refresh after the next block.</span>
-              </div>
-            </div>
-          </div>
-        ) : tx ? (
+    <Layout title="Transaction">
+      <section className="scan-hero">
+        <div className="scan-eyebrow">{tx?.kind === "coinbase" ? "Block reward" : "Private transfer"}</div>
+        <h1 className="scan-title scan-mono" style={{ fontSize: "clamp(16px, 2.2vw, 24px)", letterSpacing: 0 }}>
+          {txid}
+          <Copy value={txid} label="Copy the transaction id" />
+        </h1>
+        {!height && (
           <>
-            <div className="mt-6 rounded-xl border border-border bg-card p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  {tx.status === "pending" ? (
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-yellow-500/80">
-                      <Clock3 className="h-3 w-3" />
-                      In Mempool · Awaiting Confirmation
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                      <ShieldCheck className="h-3 w-3 text-signal" />
-                      {tx.status === "confirmed" ? "Confirmed · zk-SNARK verified" : tx.status}
-                    </div>
-                  )}
-                  <h1 className="mt-3 text-sm font-medium text-muted-foreground">Transaction</h1>
-                  <p className="font-mono-tight mt-1 break-all text-base text-foreground sm:text-lg">{hash}</p>
-                </div>
-                <Button variant="outline" size="sm" className="h-9 rounded-lg border-border bg-background text-xs" onClick={() => { navigator.clipboard.writeText(hash); toast({ title: "Hash copied" }); }}>
-                  <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
-                </Button>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-3">
-                {[
-                  { label: "Block", value: tx.blockHeight > 0 ? tx.blockHeight.toLocaleString() : "pending" },
-                  { label: "Confirmations", value: tx.confirmations > 0 ? tx.confirmations.toLocaleString() : "—" },
-                  { label: "Size", value: tx.size > 0 ? `${tx.size} B` : "—" },
-                ].map((m) => (
-                  <div key={m.label} className="bg-card px-4 py-3">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{m.label}</div>
-                    <div className="font-mono-tight mt-1.5 text-sm text-foreground">{m.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-3">
-              <div className="rounded-xl border border-border bg-card lg:col-span-2">
-                <div className="border-b border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Details</div>
-                <Field label="Status" value={
-                  tx.status === "pending"
-                    ? <span className="text-yellow-500/80 capitalize">Pending — in mempool, not yet mined</span>
-                    : <span className="text-signal capitalize">{tx.status}</span>
-                } />
-                <Field label="Timestamp" value={tx.timestamp ? new Date(tx.timestamp).toUTCString() : "—"} />
-                {tx.blockHeight > 0 && (
-                  <Field label="Block Height" value={tx.blockHeight.toLocaleString()} mono link={`/block/${tx.blockHeight}`} />
-                )}
-                <Field label="Sender" value={<span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3 text-muted-foreground" />shielded</span>} />
-                <Field label="Receiver" value={<span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3 text-muted-foreground" />shielded</span>} />
-                <Field label="Amount" value={<span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3 text-muted-foreground" />hidden · zk-SNARK verified</span>} />
-                {tx.ringSize > 0 && <Field label="Ring Size" value={tx.ringSize} mono />}
-                {tx.size > 0 && <Field label="Size" value={`${tx.size} bytes`} mono />}
-              </div>
-
-              <div className="rounded-xl border border-border bg-card">
-                <div className="border-b border-border px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">zk-SNARK proof</div>
-                <div className="px-5 py-4">
-                  <p className="text-xs text-muted-foreground">Cryptographic commitment proving validity without revealing inputs.</p>
-                  <pre className="font-mono-tight mt-3 overflow-hidden rounded-lg border border-border bg-background p-3 text-[11px] leading-relaxed text-foreground">{tx.proof}</pre>
-                  <div className="mt-4 flex items-center gap-2 text-[11px] text-muted-foreground">
-                    <ShieldCheck className="h-3.5 w-3.5 text-signal" /> Verified on-chain
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p className="scan-lede">
+              Transactions are found through their block for now: open the block, then the transaction. Search a block
+              by its height or hash.
+            </p>
+            <SearchBar />
           </>
-        ) : null}
+        )}
+        {b && !tx && <p className="scan-notice">Block #{formatInteger(b.height)} has no transaction with this id.</p>}
+        {block.isError && <p className="scan-notice">The explorer API does not answer right now.</p>}
       </section>
 
-      <SiteFooter />
-    </main>
+      {b && tx && (
+        <>
+          <div className="scan-card mt-8">
+            <dl className="scan-facts">
+              <dt>Block</dt>
+              <dd>
+                <Link className="scan-link" to={`/block/${b.height}`}>
+                  #{formatInteger(b.height)}
+                </Link>{" "}
+                <span className="scan-muted">
+                  · {formatUtc(b.timestamp)} · {timeAgo(b.timestamp)} · {b.confirmations} confirmations
+                </span>
+              </dd>
+              <dt>Kind</dt>
+              <dd>{tx.kind === "coinbase" ? "Coinbase: the block reward, paid to private notes" : "Private transfer"}</dd>
+              <dt>Spends</dt>
+              <dd>
+                {tx.inputs} note{tx.inputs === 1 ? "" : "s"}
+                {tx.kind === "transfer" && <span className="scan-muted"> · by nullifier, never naming the note</span>}
+              </dd>
+              <dt>Creates</dt>
+              <dd>
+                {tx.outputs} note{tx.outputs === 1 ? "" : "s"}
+                <span className="scan-muted"> · each sealed with X-Wing for its recipient</span>
+              </dd>
+              <dt>{tx.kind === "coinbase" ? "Amount" : "Fee"}</dt>
+              <dd>
+                {tx.kind === "coinbase" ? (
+                  <>
+                    {formatZka(b.reward_atoms)} ZKA{" "}
+                    <span className="scan-muted">· spendable after {COINBASE_MATURITY} blocks</span>
+                  </>
+                ) : (
+                  `${formatZka(tx.fee_atoms)} ZKA`
+                )}
+              </dd>
+              <dt>Size</dt>
+              <dd>
+                {formatBytes(tx.size_bytes)}
+                {tx.proof_bytes > 0 && <span className="scan-muted"> · STARK proof {formatBytes(tx.proof_bytes)}</span>}
+              </dd>
+            </dl>
+          </div>
+          <p className="scan-note">
+            {tx.kind === "coinbase" ? (
+              <>
+                <strong>A reward's amount is public, its recipient is not.</strong> Anyone can check how much each block
+                created; only the miner's wallet can tell the notes are its own.
+              </>
+            ) : (
+              <>
+                <strong>What this transfer hides:</strong> who paid, who was paid, how much and which notes it spent. One
+                STARK proof shows that the spender owns those notes and that inputs equal outputs plus the fee. The chain
+                only shows the fee, the number of notes in and out, and the size.
+              </>
+            )}
+          </p>
+        </>
+      )}
+    </Layout>
   );
 };
 

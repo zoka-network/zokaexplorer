@@ -1,0 +1,64 @@
+import { describe, expect, it, vi } from "vitest";
+import { ApiError, isBlockHash, recall, remember, request } from "./api";
+import { formatBytes, formatHashrate, formatZka, shortHash, timeAgo } from "./format";
+
+const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
+
+describe("format", () => {
+  it("writes ZKA with up to six decimals and no trailing zeros", () => {
+    expect(formatZka(5_000_000_000_000)).toBe("5,000,000");
+    expect(formatZka(12_000_000)).toBe("12");
+    expect(formatZka(200)).toBe("0.0002");
+    expect(formatZka(1_500_000)).toBe("1.5");
+  });
+
+  it("shortens hashes, sizes, hashrates and ages", () => {
+    expect(shortHash("69249437d8c35b7e4bf28ec524491fe18384b9869670fadff546fef29148fdb2")).toBe("69249437…9148fdb2");
+    expect(formatBytes(2830)).toBe("2.8 KB");
+    expect(formatBytes(1_933_755)).toBe("1.84 MB");
+    expect(formatHashrate(136)).toBe("136 H/s");
+    expect(formatHashrate(1_250)).toBe("1.3 kH/s");
+    expect(timeAgo(1000, 1045)).toBe("45s ago");
+    expect(timeAgo(1000, 1000 + 3 * 3600 + 120)).toBe("3h 2m ago");
+  });
+
+  it("tells a block hash apart", () => {
+    expect(isBlockHash("0".repeat(64))).toBe(true);
+    expect(isBlockHash("0".repeat(63))).toBe(false);
+    expect(isBlockHash("zqtest2abc")).toBe(false);
+  });
+});
+
+describe("request", () => {
+  it("waits and asks again when the node is busy", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(reply(429, { error: "too many requests" }, { "retry-after": "1" }))
+      .mockResolvedValueOnce(reply(200, { height: 7 }));
+    const pending = request<{ height: number }>("/status", fetcher as unknown as typeof fetch);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await expect(pending).resolves.toEqual({ height: 7 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it("does not retry an answer such as 404", async () => {
+    const fetcher = vi.fn().mockResolvedValue(reply(404, { error: "unknown block height" }));
+    const failure = request("/blocks/9/summary", fetcher as unknown as typeof fetch);
+    await expect(failure).rejects.toBeInstanceOf(ApiError);
+    await expect(failure).rejects.toMatchObject({ status: 404, message: "unknown block height" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("remember", () => {
+  it("keeps the last good answer with its time", () => {
+    remember("status", { height: 3 });
+    const saved = recall<{ height: number }>("status");
+    expect(saved?.value).toEqual({ height: 3 });
+    expect(saved?.savedAt).toBeGreaterThan(0);
+    expect(recall("nothing")).toBeNull();
+  });
+});

@@ -1,120 +1,71 @@
-// ─── Zoka Core Types ────────────────────────────────────────────
-// These types define the shape of data from the real blockchain.
-// When connecting to the real network, only the API service layer
-// needs to change — components consume these types unchanged.
+// What the node's public API answers (see `public_router` in the node's
+// src/quantic/stark_api.rs).
 
-export interface NetworkStats {
-  height: number;
-  difficulty: number;       // PoW leading-zero bits
-  hashrate: number;         // estimated network MH/s
-  emission: number;         // total ZKA in circulation
-  lastBlockTime: number;    // unix ms
-  networkVersion: string;
-  mempoolSize?: number;
-  privateTxsConfirmed?: number;
-  minersOnline?: number;
-  connectedPeers?: number;
-  reportedHashrate?: number;
-}
-
-export interface Block {
+export interface NodeStatus {
+  chain_id: string;
+  node_version: string;
+  pool_version: number;
   height: number;
   hash: string;
-  previousHash: string;
-  timestamp: number;       // unix ms
-  difficulty: number;
+  tip_timestamp: number;
+  issued_atoms: number;
+  notes: number;
+  mempool_transactions: number;
+  pow_algorithm: string;
+  target_block_secs: number;
+  next_difficulty_bits: number;
+  hashrate_estimate_hps: number;
+  checkpoint: { height: number; block_hash: string } | null;
+  peers: { outbound: number; inbound: number };
+  directory: { addresses: number };
+}
+
+export interface TxSummary {
+  txid: string;
+  kind: "coinbase" | "transfer";
+  inputs: number;
+  outputs: number;
+  fee_atoms: number;
+  size_bytes: number;
+  proof_bytes: number;
+}
+
+export interface BlockSummary {
+  hash: string;
+  height: number;
+  timestamp: number;
+  state_root: string;
+  previous_hash: string;
   nonce: number;
-  size: number;            // bytes
-  txCount: number;
-  reward: number;          // ZKA
-  minerAddress: string;
-  transactions: string[];  // tx hashes
-  privateTransactions?: string[]; // privacy-safe private tx hashes
-  privateTxCount?: number; // count when hashes aren't fetched (list views)
-  privateNullifierCount?: number; // anchored double-spend proofs (count only)
-}
-
-// A privacy-safe pointer to a private tx anchored in a block. Only the hash
-// and the block it landed in are public — never amounts, parties or owners.
-export interface PrivateActivityItem {
-  hash: string;
-  blockHeight: number;
-}
-
-export interface Transaction {
-  hash: string;
-  blockHeight: number;
-  blockHash: string;
-  timestamp: number;
-  status: "confirmed" | "pending" | "failed";
-  amount: number;
-  fee: number;
-  from: string;
-  to: string;              // "shielded" when hidden
-  ringSize: number;
-  size: number;            // bytes
+  size_bytes: number;
+  reward_atoms: number;
+  transactions_count: number;
+  private_tx_count: number;
+  private_nullifier_count: number;
+  canonical: boolean;
   confirmations: number;
-  proof: string;           // zk-SNARK proof hex
+  difficulty_bits: number;
+  target_compact: number;
+  hashrate_estimate_hps: number;
+  fees_atoms: number;
+  transactions: TxSummary[];
 }
 
-export interface Address {
+export interface RecentBlocks {
+  height: number;
+  blocks: BlockSummary[];
+}
+
+export interface AddressLookup {
+  short_address: string;
   address: string;
-  balance: number;
-  totalReceived: number;
-  totalSent: number;
-  txCount: number;
-  firstSeen: number;       // unix ms
-  lastSeen: number;        // unix ms
-  transactions: string[];  // tx hashes (most recent)
 }
 
-export interface PrivateViewOutput {
-  tx_hash: string;
-  output_id: string;
-  output_index: number;
-  asset_tag: string;
-  amount: number;
-  commitment: string;
-  stealth_address: string;
-  one_time_public_key: string;
-  is_change: boolean;
-  timestamp: number;
-}
-
-export interface PrivateViewScan {
-  address: string;
-  scanned_transactions: number;
-  matching_outputs: number;
-  total_amount_atoms: number;
-  matches: PrivateViewOutput[];
-}
-
-export interface SearchResult {
-  type: "transaction" | "block" | "address" | "record" | "scan-key";
-  id: string;              // hash, height, or address
-  label: string;           // short display text
-  kind?: SafeRecordKind;
-}
-
-export type SafeRecordKind =
-  | "commitment"
-  | "nullifier"
-  | "root"
-  | "private-tx"
-  | "hash";
-
-export interface SafeRecord {
-  kind: SafeRecordKind;
-  id: string;
-  status: "found" | "unknown";
-  blockHeight?: number;
-  timestamp?: number;
-  note: string;
-}
-
-export type MetricKey = "height" | "difficulty" | "hashrate" | "emission" | "miners";
-
-export interface MetricDataPoint {
-  timestamp: number;
-  value: number;
+export interface Checkpoint {
+  version: number;
+  chain_id: string;
+  height: number;
+  block_hash: string;
+  signature: string;
+  mldsa_signature?: string;
 }
