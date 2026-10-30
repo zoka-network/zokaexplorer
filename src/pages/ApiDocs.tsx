@@ -76,7 +76,7 @@ const ApiDocs = () => (
         <dd>GET only. Nothing here writes, mines or signs.</dd>
         <dt>Rate</dt>
         <dd>
-          20 requests a second shared by everyone, bursts of 40.{" "}
+          20 requests a second shared by everyone, bursts of 40; scan pages, one a second after a burst of ten.{" "}
           <span className="scan-muted">A busy node answers 429 with Retry-After: wait and ask again.</span>
         </dd>
         <dt>Caching</dt>

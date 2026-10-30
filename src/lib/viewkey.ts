@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api, ApiError } from "./api";
 import { NETWORK_ID, VIEW_KEY_PREFIX } from "./config";
 import init, { Scanner } from "./scan-wasm/zoka_pq_scan_wasm.js";
 import type { WalletBalance } from "./types";
@@ -34,6 +34,19 @@ export interface WalletView {
 
 let ready: Promise<unknown> | null = null;
 
+// Scan pages have a slow rate of their own (one a second after a burst of
+// ten): when the node says "too many", the scan waits instead of failing.
+async function pageFrom(from: number, signal: AbortSignal): Promise<Uint8Array> {
+  for (;;) {
+    try {
+      return await api.scanPage(from);
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 429) || signal.aborted) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+    }
+  }
+}
+
 export async function scanWallet(
   key: string,
   onProgress: (progress: ScanProgress) => void,
@@ -47,7 +60,7 @@ export async function scanWallet(
     let tip = Infinity;
     while (scanner.next() <= tip) {
       if (signal.aborted) throw new DOMException("The scan was stopped", "AbortError");
-      const page = await api.scanPage(scanner.next());
+      const page = await pageFrom(scanner.next(), signal);
       // A page past the tip comes back empty, and the loop ends.
       tip = scanner.add_page(page);
       onProgress({ scanned: Math.min(scanner.next() - 1, tip), tip });
