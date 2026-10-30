@@ -1,4 +1,4 @@
-import { API_URL } from "./config";
+import { API_URL, SCAN_BASE } from "./config";
 import type {
   AddressLookup,
   BlockStats,
@@ -30,13 +30,14 @@ export async function request<T>(
   path: string,
   fetcher: typeof fetch = fetch,
   read: (response: Response) => Promise<T> = (response) => response.json() as Promise<T>,
+  base: string = API_URL,
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      const response = await fetcher(`${API_URL}${path}`, { signal: controller.signal });
+      const response = await fetcher(`${base}${path}`, { signal: controller.signal });
       if (response.ok) return await read(response);
       const body = await response.json().catch(() => ({}) as { error?: string });
       const message = (body as { error?: string }).error || `HTTP ${response.status}`;
@@ -76,7 +77,12 @@ export const api = {
   // The encrypted outputs of up to 100 blocks from `from`, for the view-key
   // scanner. Every visitor downloads the same pages.
   scanPage: (from: number) =>
-    request(`/scan?from=${from}&count=100`, fetch, async (response) => new Uint8Array(await response.arrayBuffer())),
+    request(
+      `/scan?from=${from}&count=100`,
+      fetch,
+      async (response) => new Uint8Array(await response.arrayBuffer()),
+      SCAN_BASE,
+    ),
 };
 
 // The last good answer, kept in this browser: an explorer that goes blank reads

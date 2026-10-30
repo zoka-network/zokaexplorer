@@ -14,6 +14,10 @@ export const API_URL = (
   configured || (import.meta.env.DEV ? "http://127.0.0.1:9181" : "https://api.zokascan.cc")
 ).replace(/\/+$/, "");
 
+// Scan pages: in production through zokascan.cc's own /scan (functions/scan.js),
+// which caches the immutable ones at Cloudflare's edge; in development, the node.
+export const SCAN_BASE = configured || import.meta.env.DEV ? API_URL : "";
+
 export const ATOMS_PER_ZKA = 1_000_000;
 export const TARGET_BLOCK_SECS = 120;
 export const COINBASE_MATURITY = 60;
