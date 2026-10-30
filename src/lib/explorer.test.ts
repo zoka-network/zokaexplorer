@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiError, isBlockHash, recall, remember, request } from "./api";
-import { formatBytes, formatHashrate, formatZka, shortHash, timeAgo } from "./format";
+import { formatBytes, formatDuration, formatHashrate, formatZka, shortHash, timeAgo } from "./format";
+import { handOver, looksLikeViewKey, takeHandedOver } from "./viewkey";
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
@@ -21,6 +22,8 @@ describe("format", () => {
     expect(formatHashrate(1_250)).toBe("1.3 kH/s");
     expect(timeAgo(1000, 1045)).toBe("45s ago");
     expect(timeAgo(1000, 1000 + 3 * 3600 + 120)).toBe("3h 2m ago");
+    expect(formatDuration(120)).toBe("2m");
+    expect(formatDuration(605)).toBe("10m 5s");
   });
 
   it("tells a block hash apart", () => {
@@ -60,5 +63,15 @@ describe("remember", () => {
     expect(saved?.value).toEqual({ height: 3 });
     expect(saved?.savedAt).toBeGreaterThan(0);
     expect(recall("nothing")).toBeNull();
+  });
+});
+
+describe("view keys", () => {
+  it("are told apart from addresses and handed over once, in memory", () => {
+    expect(looksLikeViewKey(" zqtestview2abc")).toBe(true);
+    expect(looksLikeViewKey("zqtest2abc")).toBe(false);
+    handOver("zqtestview2abc");
+    expect(takeHandedOver()).toBe("zqtestview2abc");
+    expect(takeHandedOver()).toBeNull();
   });
 });

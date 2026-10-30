@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { handOver, looksLikeViewKey } from "@/lib/viewkey";
 
 const SearchBar = ({ autoFocus = false }: { autoFocus?: boolean }) => {
   const [query, setQuery] = useState("");
@@ -7,7 +8,15 @@ const SearchBar = ({ autoFocus = false }: { autoFocus?: boolean }) => {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const value = query.trim();
-    if (value) navigate(`/search/${encodeURIComponent(value)}`);
+    if (!value) return;
+    // A view key never goes into a URL: it is handed to the wallet page in memory.
+    if (looksLikeViewKey(value)) {
+      handOver(value);
+      setQuery("");
+      navigate("/wallet");
+      return;
+    }
+    navigate(`/search/${encodeURIComponent(value)}`);
   };
   return (
     <form className="scan-search" onSubmit={submit} role="search">

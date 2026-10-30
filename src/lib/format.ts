@@ -44,10 +44,15 @@ export function timeAgo(seconds: number, now = Date.now() / 1000): string {
 export function formatDuration(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));
   if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+  if (s < 3600) return s % 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s / 60}m`;
   return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
 }
 
 export function formatUtc(seconds: number): string {
   return new Date(seconds * 1000).toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
+}
+
+// A sample's local time of day, for chart axes: 14:05.
+export function formatClock(seconds: number): string {
+  return new Date(seconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 }

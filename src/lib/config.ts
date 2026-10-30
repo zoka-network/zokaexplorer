@@ -4,6 +4,10 @@
 export const CHAIN_ID = "zoka-quantic-testnet-v2";
 export const NETWORK_LABEL = "Zoka Quantic Testnet";
 export const ADDRESS_PREFIX = "zqtest2";
+// What `quantic-pq-wallet show-view-key` prints on this network.
+export const VIEW_KEY_PREFIX = "zqtestview2";
+// The pool's network byte: 1 mainnet, 2 testnet, 3 regtest.
+export const NETWORK_ID = 2;
 
 const configured = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
 export const API_URL = (
@@ -13,6 +17,11 @@ export const API_URL = (
 export const ATOMS_PER_ZKA = 1_000_000;
 export const TARGET_BLOCK_SECS = 120;
 export const COINBASE_MATURITY = 60;
+export const MAX_SUPPLY_ZKA = 23_000_000;
+
+// Chart marks: the Quantic pink, a step deeper than the text pink so a thin
+// line still reads on black.
+export const CHART_INK = "#d9659f";
 
 // How often the front page asks for news, and when its data counts as late.
 export const REFRESH_MS = 15_000;

@@ -69,3 +69,76 @@ export interface Checkpoint {
   signature: string;
   mldsa_signature?: string;
 }
+
+export interface BlockStat {
+  height: number;
+  timestamp: number;
+  /** Null for block 1, which has no parent on the chain. */
+  interval_secs: number | null;
+  difficulty_bits: number;
+  hashrate_estimate_hps: number;
+  transactions: number;
+  size_bytes: number;
+}
+
+export interface BlockStats {
+  height: number;
+  blocks: BlockStat[];
+}
+
+export interface NetworkSample {
+  time: number;
+  height: number;
+  outbound: number;
+  inbound: number;
+  known: number;
+  difficulty_bits: number;
+  hashrate_estimate_hps: number;
+  mempool_transactions: number;
+}
+
+export interface NetworkHistory {
+  every_secs: number;
+  samples: NetworkSample[];
+}
+
+export interface Supply {
+  height: number;
+  issued_atoms: number;
+  issued_zka: string;
+  max_supply_atoms: number;
+  max_supply_zka: string;
+  premine_atoms: number;
+  next_block_subsidy_atoms: number;
+  atoms_per_zka: number;
+}
+
+// What the in-browser scanner finds with a view key (zoka-pq-pool's
+// `scan::Balance`), in atoms.
+export interface ReceivedNote {
+  height: number;
+  txid: string;
+  coinbase: boolean;
+  value: number;
+  memo: string;
+}
+
+export interface SentTransfer {
+  height: number;
+  txid: string;
+  spent: number;
+  paid: number;
+  change: number;
+  fee: number;
+}
+
+export interface WalletBalance {
+  height: number;
+  balance_atoms: number;
+  spendable_atoms: number;
+  immature_atoms: number;
+  received_atoms: number;
+  sent_atoms: number;
+  received: ReceivedNote[];
+  sent: SentTransfer[];
+}

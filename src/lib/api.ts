@@ -1,5 +1,14 @@
 import { API_URL } from "./config";
-import type { AddressLookup, BlockSummary, Checkpoint, NodeStatus, RecentBlocks } from "./types";
+import type {
+  AddressLookup,
+  BlockStats,
+  BlockSummary,
+  Checkpoint,
+  NetworkHistory,
+  NodeStatus,
+  RecentBlocks,
+  Supply,
+} from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -17,14 +26,18 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // The node answers 429 or 503 when it is busy, with Retry-After: waiting and
 // asking again is the polite thing. A 404 is an answer, not a failure.
-export async function request<T>(path: string, fetcher: typeof fetch = fetch): Promise<T> {
+export async function request<T>(
+  path: string,
+  fetcher: typeof fetch = fetch,
+  read: (response: Response) => Promise<T> = (response) => response.json() as Promise<T>,
+): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
       const response = await fetcher(`${API_URL}${path}`, { signal: controller.signal });
-      if (response.ok) return (await response.json()) as T;
+      if (response.ok) return await read(response);
       const body = await response.json().catch(() => ({}) as { error?: string });
       const message = (body as { error?: string }).error || `HTTP ${response.status}`;
       if (response.status !== 429 && response.status !== 503) {
@@ -57,6 +70,13 @@ export const api = {
       : request<BlockSummary>(`/blocks/hash/${id.toLowerCase()}/summary`),
   address: (short: string) => request<AddressLookup>(`/address/${encodeURIComponent(short)}`),
   checkpoint: () => request<Checkpoint>("/checkpoint"),
+  stats: (count = 720) => request<BlockStats>(`/blocks/stats?count=${count}`),
+  history: () => request<NetworkHistory>("/network/history"),
+  supply: () => request<Supply>("/supply"),
+  // The encrypted outputs of up to 100 blocks from `from`, for the view-key
+  // scanner. Every visitor downloads the same pages.
+  scanPage: (from: number) =>
+    request(`/scan?from=${from}&count=100`, fetch, async (response) => new Uint8Array(await response.arrayBuffer())),
 };
 
 // The last good answer, kept in this browser: an explorer that goes blank reads

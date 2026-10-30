@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Copy from "@/components/Copy";
 import Layout from "@/components/Layout";
 import { api, ApiError } from "@/lib/api";
@@ -44,13 +44,17 @@ const AddressDetail = () => {
       )}
 
       <p className="scan-note">
-        <strong>No balance, no history.</strong> A Zoka Quantic payment is a note sealed for its recipient with X-Wing,
-        and the chain never says which address received it. Only the owner's wallet can find its payments and add
-        them up. To see yours, open your wallet in{" "}
+        <strong>No public balance, no public history.</strong> A Zoka Quantic payment is a note sealed for its
+        recipient with X-Wing, and the chain never says which address received it. Only the wallet's keys find its
+        payments: its owner can read them in{" "}
         <a className="scan-link" href={ZSILENT_RELEASES} target="_blank" rel="noopener noreferrer">
           ZSilent
-        </a>
-        .
+        </a>{" "}
+        or, with the wallet's view key, in{" "}
+        <Link className="scan-link" to="/wallet">
+          My wallet
+        </Link>
+        , inside the browser.
       </p>
     </Layout>
   );

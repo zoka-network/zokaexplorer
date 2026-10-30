@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Copy from "@/components/Copy";
 import Layout from "@/components/Layout";
 import LiveStatus from "@/components/LiveStatus";
+import NetworkCharts from "@/components/NetworkCharts";
 import { api } from "@/lib/api";
 import { API_URL, COINBASE_MATURITY, REFRESH_MS, ZOKA_SITE } from "@/lib/config";
 import { formatInteger, formatZka } from "@/lib/format";
@@ -25,6 +26,8 @@ const Network = () => {
         </p>
         <LiveStatus status={status} />
       </section>
+
+      <NetworkCharts />
 
       <h2 className="scan-heading">Parameters</h2>
       <div className="scan-card">
@@ -109,7 +112,15 @@ const Network = () => {
       <p className="scan-note">
         ZokaScan reads the read-only API of a Zoka node, at <span className="scan-mono">{API_URL}</span>. It sees what
         any node sees: blocks, their work, fees and sizes. It cannot see balances or who paid whom, because the chain
-        does not say. Learn more at{" "}
+        does not say; a wallet's own balance is read with its view key, in the browser (
+        <Link className="scan-link" to="/wallet">
+          My wallet
+        </Link>
+        ). The endpoints are documented under{" "}
+        <Link className="scan-link" to="/api">
+          API
+        </Link>
+        . Learn more at{" "}
         <a className="scan-link" href={ZOKA_SITE} target="_blank" rel="noopener noreferrer">
           zoka.network
         </a>

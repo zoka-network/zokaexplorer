@@ -13,7 +13,9 @@ const SiteHeader = () => (
           Blocks
         </NavLink>
         <NavLink to="/network">Network</NavLink>
-        <a href={ZOKA_SITE} target="_blank" rel="noopener noreferrer">
+        <NavLink to="/wallet">My wallet</NavLink>
+        <NavLink to="/api">API</NavLink>
+        <a className="scan-links-external" href={ZOKA_SITE} target="_blank" rel="noopener noreferrer">
           zoka.network ↗
         </a>
       </div>
