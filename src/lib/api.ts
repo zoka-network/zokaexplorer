@@ -8,6 +8,7 @@ import type {
   NodeStatus,
   RecentBlocks,
   Supply,
+  TransactionStatus,
 } from "./types";
 
 export class ApiError extends Error {
@@ -75,6 +76,9 @@ export const api = {
       ? request<BlockSummary>(`/blocks/${Number(id)}/summary`)
       : request<BlockSummary>(`/blocks/hash/${id.toLowerCase()}/summary`),
   address: (short: string) => request<AddressLookup>(`/address/${encodeURIComponent(short)}`),
+  // A payment by its id: the node keeps no index, so it looks in its mempool
+  // and its last 720 blocks. A node before 4.0.5 answers 404.
+  transaction: (txid: string) => request<TransactionStatus>(`/transactions/${txid.toLowerCase()}`),
   checkpoint: () => request<Checkpoint>("/checkpoint"),
   stats: (count = 720) => request<BlockStats>(`/blocks/stats?count=${count}`),
   history: () => request<NetworkHistory>("/network/history"),

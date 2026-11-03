@@ -62,6 +62,15 @@ export interface AddressLookup {
   address: string;
 }
 
+/** `GET /transactions/{txid}`: in the mempool, or in one of the last 720 blocks. */
+export interface TransactionStatus {
+  txid: string;
+  status: "pending" | "confirmed";
+  height?: number;
+  block_hash?: string;
+  confirmations?: number;
+}
+
 export interface Checkpoint {
   version: number;
   chain_id: string;

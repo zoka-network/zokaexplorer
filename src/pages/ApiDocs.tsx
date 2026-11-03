@@ -55,6 +55,11 @@ const ENDPOINTS: Endpoint[] = [
     path: "/checkpoint",
     what: "The latest checkpoint signed by the network's authority (Ed25519 and ML-DSA-65).",
   },
+  {
+    path: "/transactions/{txid}",
+    what: "Where a payment is: pending in the explorer node's mempool, or confirmed in one of its last 720 blocks (about a day), with that block. Nothing about who paid whom or how much.",
+    example: '{"txid":"ebfdbf1a…","status":"confirmed","height":4012,"block_hash":"a63fff23…","confirmations":3}',
+  },
 ];
 
 const ApiDocs = () => (
