@@ -47,6 +47,17 @@ describe("request", () => {
     vi.useRealTimers();
   });
 
+  it("keeps every digit of a u64 nonce", async () => {
+    const body =
+      '{"height":4003,"nonce":17480248669717492693,"previous_hash":"308d87b0","transactions":[{"kind":"coinbase"}]}';
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(body, { status: 200, headers: { "content-type": "application/json" } }));
+    const block = await request<{ height: number; nonce: string }>("/blocks/4003/summary", fetcher as unknown as typeof fetch);
+    expect(block.nonce).toBe("17480248669717492693");
+    expect(block.height).toBe(4003);
+  });
+
   it("does not retry an answer such as 404", async () => {
     const fetcher = vi.fn().mockResolvedValue(reply(404, { error: "unknown block height" }));
     const failure = request("/blocks/9/summary", fetcher as unknown as typeof fetch);

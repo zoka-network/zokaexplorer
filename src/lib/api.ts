@@ -24,12 +24,17 @@ const ATTEMPTS = 3;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// A block nonce is a u64: in Zoka Quantic it passes 2^53 (block 4003 has
+// 17480248669717492693) and a JavaScript number rounds it. Read it as text.
+export const parseNodeJson = <T>(text: string): T =>
+  JSON.parse(text.replace(/"nonce"\s*:\s*(\d+)/g, '"nonce":"$1"')) as T;
+
 // The node answers 429 or 503 when it is busy, with Retry-After: waiting and
 // asking again is the polite thing. A 404 is an answer, not a failure.
 export async function request<T>(
   path: string,
   fetcher: typeof fetch = fetch,
-  read: (response: Response) => Promise<T> = (response) => response.json() as Promise<T>,
+  read: (response: Response) => Promise<T> = async (response) => parseNodeJson<T>(await response.text()),
   base: string = API_URL,
 ): Promise<T> {
   let lastError: unknown;

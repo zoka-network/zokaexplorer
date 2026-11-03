@@ -36,7 +36,8 @@ export interface BlockSummary {
   timestamp: number;
   state_root: string;
   previous_hash: string;
-  nonce: number;
+  /** u64 as decimal text: it does not fit in a JavaScript number. */
+  nonce: string;
   size_bytes: number;
   reward_atoms: number;
   transactions_count: number;
