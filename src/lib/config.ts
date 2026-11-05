@@ -35,3 +35,6 @@ export const ZOKA_SITE = "https://zoka.network";
 export const ZSILENT_RELEASES = "https://github.com/zoka-network/zsilent-core/releases";
 export const EXPLORER_REPO = "https://github.com/zoka-network/zokaexplorer";
 export const DISCORD = "https://discord.gg/uZRPcNb3m7";
+// GitHub, X and Discord, as in the footer of zoka.network.
+export const GITHUB_ORG = "https://github.com/zoka-network";
+export const X_URL = "https://x.com/zokanetwork";

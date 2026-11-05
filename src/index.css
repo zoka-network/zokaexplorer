@@ -58,6 +58,9 @@
 .scan-footer { border-top: 1px solid #1d1a20; }
 .scan-footer-inner { max-width: 1280px; margin: 0 auto; padding: 26px 5% 34px; display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; color: #77777e; font-size: 11px; letter-spacing: .03em; }
 .scan-footer a:hover { color: #f2abd0; }
+.scan-footer-inner { align-items: center; }
+.scan-socials { display: flex; align-items: center; gap: 20px; }
+.scan-social { display: flex; align-items: center; justify-content: center; min-width: 32px; min-height: 36px; transition: color .2s; }
 
 /* Type */
 .scan-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #f2abd0; }
