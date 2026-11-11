@@ -1,15 +1,16 @@
 import { api, ApiError } from "./api";
-import { NETWORK_ID, VIEW_KEY_PREFIX } from "./config";
+import { INCOMING_VIEW_KEY_PREFIX, NETWORK_ID, VIEW_KEY_PREFIX } from "./config";
 import init, { Scanner } from "./scan-wasm/zoka_pq_scan_wasm.js";
-import type { WalletBalance } from "./types";
+import type { WalletBalance, WalletReceipts } from "./types";
 
-// A view key opens the wallet's notes and recognises its own transfers, so it
-// gives the exact balance, and it cannot spend. It stays in this page: the
+// Full keys read balances; incoming keys only read receipts. Neither can
+// spend. The key stays in this page: the
 // scanner runs here (WebAssembly built from the node's own zoka-pq-pool) on
 // pages of encrypted outputs that every visitor downloads alike, so the node
 // never learns whose wallet is being read.
 
-export const looksLikeViewKey = (text: string) => text.trim().startsWith(VIEW_KEY_PREFIX);
+export const looksLikeViewKey = (text: string) =>
+  [VIEW_KEY_PREFIX, INCOMING_VIEW_KEY_PREFIX].some((prefix) => text.trim().startsWith(prefix));
 
 // The search box hands a pasted key over in memory, never through the URL.
 let handedOver: string | null = null;
@@ -29,7 +30,7 @@ export interface ScanProgress {
 
 export interface WalletView {
   address: string;
-  balance: WalletBalance;
+  balance: WalletBalance | WalletReceipts;
 }
 
 let ready: Promise<unknown> | null = null;
@@ -54,6 +55,7 @@ export async function scanWallet(
 ): Promise<WalletView> {
   ready ??= init();
   await ready;
+  if (signal.aborted) throw new DOMException("The scan was stopped", "AbortError");
   const scanner = new Scanner(key.trim(), NETWORK_ID);
   try {
     const address = scanner.address();
@@ -61,11 +63,12 @@ export async function scanWallet(
     while (scanner.next() <= tip) {
       if (signal.aborted) throw new DOMException("The scan was stopped", "AbortError");
       const page = await pageFrom(scanner.next(), signal);
+      if (signal.aborted) throw new DOMException("The scan was stopped", "AbortError");
       // A page past the tip comes back empty, and the loop ends.
       tip = scanner.add_page(page);
       onProgress({ scanned: Math.min(scanner.next() - 1, tip), tip });
     }
-    return { address, balance: JSON.parse(scanner.balance()) as WalletBalance };
+    return { address, balance: JSON.parse(scanner.balance()) as WalletBalance | WalletReceipts };
   } finally {
     scanner.free();
   }

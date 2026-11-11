@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { ApiError } from "@/lib/api";
-import { COINBASE_MATURITY, VIEW_KEY_PREFIX, ZSILENT_RELEASES } from "@/lib/config";
+import { COINBASE_MATURITY, INCOMING_VIEW_KEY_PREFIX, VIEW_KEY_PREFIX } from "@/lib/config";
 import { formatInteger, formatZka, shortHash } from "@/lib/format";
-import type { WalletBalance } from "@/lib/types";
+import type { WalletBalance, WalletReceipts } from "@/lib/types";
 import { looksLikeViewKey, scanWallet, takeHandedOver, type ScanProgress, type WalletView } from "@/lib/viewkey";
 
 type Row = {
@@ -18,7 +18,13 @@ type Row = {
 
 // One row per transaction: a payment of the wallet's own shows what left it
 // (paid plus fee); its change is not a payment received.
-function rows(balance: WalletBalance): Row[] {
+function rows(balance: WalletBalance | WalletReceipts): Row[] {
+  if (balance.kind === "incoming") {
+    return balance.received.filter((r) => !r.change).map((r): Row => ({
+      height: r.height, txid: r.txid, kind: r.coinbase ? "Mined" : "Received",
+      amount: r.value, fee: 0, memo: r.memo,
+    })).sort((a, b) => b.height - a.height);
+  }
   const own = new Set(balance.sent.map((s) => s.txid));
   const received: Row[] = balance.received
     .filter((r) => !own.has(r.txid))
@@ -69,7 +75,10 @@ const Wallet = () => {
     setProgress(null);
     setScanning(true);
     try {
-      setView(await scanWallet(text, setProgress, controller.signal));
+      const result = await scanWallet(text, (next) => {
+        if (!controller.signal.aborted) setProgress(next);
+      }, controller.signal);
+      if (!controller.signal.aborted) setView(result);
     } catch (failure) {
       if (controller.signal.aborted) return;
       setError(
@@ -98,7 +107,7 @@ const Wallet = () => {
     event.preventDefault();
     const text = key.trim();
     if (!looksLikeViewKey(text)) {
-      setError(`A view key of this network starts with ${VIEW_KEY_PREFIX}.`);
+      setError(`An incoming view key starts with ${INCOMING_VIEW_KEY_PREFIX}; a full view key starts with ${VIEW_KEY_PREFIX}.`);
       return;
     }
     void scan(text);
@@ -121,10 +130,11 @@ const Wallet = () => {
     <Layout title="My wallet">
       <section className="scan-hero">
         <div className="scan-eyebrow">My wallet</div>
-        <h1 className="scan-title">Your balance, read in your browser.</h1>
+        <h1 className="scan-title">Your payments, read in your browser.</h1>
         <p className="scan-lede">
           Paste your wallet's view key. ZokaScan downloads the chain's encrypted outputs, the same pages for every
           visitor, and opens them here. The key never leaves this page, and it cannot spend.
+          {" "}An incoming view key shows receipts; a full view key also shows outgoing payments and balance.
         </p>
         <form className="scan-keyform" onSubmit={submit}>
           <label className="scan-label" htmlFor="view-key">
@@ -134,7 +144,7 @@ const Wallet = () => {
             id="view-key"
             value={key}
             onChange={(event) => setKey(event.target.value)}
-            placeholder={`${VIEW_KEY_PREFIX}…`}
+            placeholder={`${INCOMING_VIEW_KEY_PREFIX}… or ${VIEW_KEY_PREFIX}…`}
             rows={3}
             spellCheck={false}
             autoComplete="off"
@@ -183,6 +193,7 @@ const Wallet = () => {
             </p>
           </div>
           <div className="scan-stats">
+            {balance.kind === "full" ? <>
             <Figure label="Balance" atoms={balance.balance_atoms} hint="Everything this wallet holds" />
             <Figure label="Spendable" atoms={balance.spendable_atoms} hint="What it can send now" />
             <Figure
@@ -198,9 +209,23 @@ const Wallet = () => {
                 out
               </div>
             </div>
+            </> : <>
+              <Figure label="Total received" atoms={balance.received_atoms} hint="Receipts over time, excluding marked change" />
+              <Figure label="Immature rewards" atoms={balance.immature_atoms} hint={`Mined rewards wait ${COINBASE_MATURITY} blocks`} />
+              <Figure label="Marked change" atoms={balance.change_atoms} hint="Returned to this wallet; excluded from receipts" />
+              <div className="scan-stat">
+                <div className="scan-label">Received payments</div>
+                <div className="scan-stat-value">{formatInteger(history.length)}</div>
+                <div className="scan-stat-hint">Incoming view key</div>
+              </div>
+            </>}
           </div>
+          {balance.kind === "incoming" && <p className="scan-note">
+            This key cannot show the balance or outgoing payments. Change from older wallets is unmarked and may appear
+            as a received payment, so the total received may include older change.
+          </p>}
 
-          <h2 className="scan-heading">History</h2>
+          <h2 className="scan-heading">{balance.kind === "incoming" ? "Received payments" : "History"}</h2>
           <div className="scan-card scan-scroll">
             <table className="scan-table">
               <thead>
@@ -214,8 +239,8 @@ const Wallet = () => {
                 </tr>
               </thead>
               <tbody>
-                {history.map((row) => (
-                  <tr key={`${row.txid}-${row.kind}-${row.amount}`}>
+                {history.map((row, index) => (
+                  <tr key={`${row.txid}-${index}`}>
                     <td>
                       <Link className="scan-link" to={`/block/${row.height}`}>
                         #{formatInteger(row.height)}
@@ -253,22 +278,19 @@ const Wallet = () => {
       <h2 className="scan-heading">Where to find your view key</h2>
       <div className="scan-card p-5 text-sm leading-relaxed text-[#cfc7d3]">
         <p>
-          With the command-line wallet (Zoka 4.0.2 or later), the same one that comes with the CLI miner:
+          Open View keys in your wallet's settings. Choose Incoming payments only to share receipts, or Full history and
+          balance when you need to see spending too. Your wallet derives both automatically from the same recovery words.
         </p>
         <pre className="scan-code mt-3">
-          zoka quantic-pq-wallet show-view-key --network testnet --dir &lt;wallets folder&gt; --name &lt;wallet&gt;
+          zoka quantic-pq-wallet show-view-key --network testnet --dir &lt;wallets folder&gt; --name &lt;wallet&gt; --incoming
         </pre>
         <p className="mt-3">
-          A button in{" "}
-          <a className="scan-link" href={ZSILENT_RELEASES} target="_blank" rel="noopener noreferrer">
-            ZSilent
-          </a>{" "}
-          to copy it is on its way.
+          With the command-line wallet, use the command above for an incoming key. Omit --incoming for a full key.
         </p>
       </div>
       <p className="scan-note">
-        <strong>Share a view key like a bank statement.</strong> Whoever holds it sees every payment of the wallet,
-        past and future, and its balance. It cannot move a single coin: spending needs the recovery phrase. A view key
+        <strong>Choose how much to share.</strong> An incoming key reveals received payments and memos, past and future.
+        A full key also reveals outgoing payments and the balance. Neither can spend: spending needs the recovery phrase. A view key
         cannot be revoked; if one leaks, send the coins to a new wallet.
       </p>
       <p className="scan-note">

@@ -14,7 +14,9 @@ export class Scanner {
      */
     address(): string;
     /**
-     * Balance and history at the last block read, as JSON (atoms).
+     * JSON (atoms) at the last block read. Full keys retain the balance
+     * fields; incoming keys return receipts only, never a fabricated balance
+     * or a sent list. `kind` tells the page which fields it may display.
      */
     balance(): string;
     /**

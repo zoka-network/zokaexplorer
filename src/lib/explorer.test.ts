@@ -80,6 +80,8 @@ describe("remember", () => {
 describe("view keys", () => {
   it("are told apart from addresses and handed over once, in memory", () => {
     expect(looksLikeViewKey(" zqtestview2abc")).toBe(true);
+    expect(looksLikeViewKey(" zqtestviewin2abc")).toBe(true);
+    expect(looksLikeViewKey("zqviewin2abc")).toBe(false);
     expect(looksLikeViewKey("zqtest2abc")).toBe(false);
     handOver("zqtestview2abc");
     expect(takeHandedOver()).toBe("zqtestview2abc");

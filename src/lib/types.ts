@@ -143,6 +143,7 @@ export interface SentTransfer {
 }
 
 export interface WalletBalance {
+  kind: "full";
   height: number;
   balance_atoms: number;
   spendable_atoms: number;
@@ -151,4 +152,14 @@ export interface WalletBalance {
   sent_atoms: number;
   received: ReceivedNote[];
   sent: SentTransfer[];
+}
+
+/** Incoming keys cannot determine a balance or observe outgoing payments. */
+export interface WalletReceipts {
+  kind: "incoming";
+  height: number;
+  received_atoms: number;
+  immature_atoms: number;
+  change_atoms: number;
+  received: (ReceivedNote & { change: boolean })[];
 }

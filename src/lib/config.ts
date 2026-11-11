@@ -6,6 +6,7 @@ export const NETWORK_LABEL = "Zoka Quantic Testnet";
 export const ADDRESS_PREFIX = "zqtest2";
 // What `quantic-pq-wallet show-view-key` prints on this network.
 export const VIEW_KEY_PREFIX = "zqtestview2";
+export const INCOMING_VIEW_KEY_PREFIX = "zqtestviewin2";
 // The pool's network byte: 1 mainnet, 2 testnet, 3 regtest.
 export const NETWORK_ID = 2;
 
