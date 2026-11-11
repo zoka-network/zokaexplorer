@@ -8,6 +8,33 @@ import { api } from "@/lib/api";
 import { API_URL, COINBASE_MATURITY, REFRESH_MS, ZOKA_SITE } from "@/lib/config";
 import { formatInteger, formatZka } from "@/lib/format";
 import { useRemembered } from "@/lib/live";
+import type { Checkpoint } from "@/lib/types";
+
+/**
+ * Version 2: one hybrid signature. Version 3: one per authority key that
+ * signed, k of n; each still Ed25519 and ML-DSA-65.
+ */
+export function Signatures({ cp }: { cp: Checkpoint }) {
+  if (cp.cosignatures?.length) {
+    const keys = cp.cosignatures.map((c) => c.signer + 1).join(", ");
+    return (
+      <>
+        {cp.cosignatures.length} of the authority's keys{" "}
+        <span className="scan-muted">
+          · keys {keys}, each Ed25519 and ML-DSA-65
+        </span>
+      </>
+    );
+  }
+  return (
+    <>
+      Ed25519 and ML-DSA-65{" "}
+      <span className="scan-muted">
+        · {(cp.signature?.length ?? 0) / 2} and {(cp.mldsa_signature?.length ?? 0) / 2} bytes, both required
+      </span>
+    </>
+  );
+}
 
 const Network = () => {
   const status = useRemembered("status", api.status, REFRESH_MS);
@@ -89,16 +116,7 @@ const Network = () => {
           </dd>
           <dt>Signatures</dt>
           <dd>
-            {cp ? (
-              <>
-                Ed25519 and ML-DSA-65{" "}
-                <span className="scan-muted">
-                  · {cp.signature.length / 2} and {(cp.mldsa_signature?.length ?? 0) / 2} bytes, both required
-                </span>
-              </>
-            ) : (
-              "—"
-            )}
+            {cp ? <Signatures cp={cp} /> : "—"}
           </dd>
         </dl>
       </div>

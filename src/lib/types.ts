@@ -76,8 +76,11 @@ export interface Checkpoint {
   chain_id: string;
   height: number;
   block_hash: string;
-  signature: string;
+  /** Version 2: one hybrid signature, its two halves in hex. */
+  signature?: string;
   mldsa_signature?: string;
+  /** Version 3: one hybrid signature per authority key that signed (k of n). */
+  cosignatures?: { signer: number; ed25519: string; mldsa: string }[];
 }
 
 export interface BlockStat {
