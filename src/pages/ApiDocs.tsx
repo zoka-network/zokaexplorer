@@ -11,7 +11,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     path: "/status",
     what: "The chain tip, issued supply, the next block's difficulty and estimated hashrate, the latest checkpoint and the explorer node's peers.",
-    example: '{"chain_id":"zoka-quantic-testnet-v2","height":513,"next_difficulty_bits":14,"hashrate_estimate_hps":136,…}',
+    example: '{"chain_id":"zoka-quantic-testnet-v3","height":513,"next_difficulty_bits":14,"hashrate_estimate_hps":136,…}',
   },
   {
     path: "/blocks/recent?count=N",

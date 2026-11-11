@@ -27,7 +27,7 @@ const AddressDetail = () => {
             published; until then, only the full address can be paid.
           </p>
         )}
-        {status === 422 && <p className="scan-notice">This is not a short address of Zoka Quantic Testnet v2.</p>}
+        {status === 422 && <p className="scan-notice">This is not a short address of Zoka Quantic Testnet v3.</p>}
         {lookup.isError && status !== 404 && status !== 422 && (
           <p className="scan-notice">The explorer API does not answer right now.</p>
         )}

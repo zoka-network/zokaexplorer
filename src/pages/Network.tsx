@@ -46,7 +46,7 @@ const Network = () => {
     <Layout title="Network">
       <section className="scan-hero">
         <div className="scan-eyebrow">Network</div>
-        <h1 className="scan-title">Zoka Quantic Testnet v2.</h1>
+        <h1 className="scan-title">Zoka Quantic Testnet v3.</h1>
         <p className="scan-lede">
           A chain whose private pool is post-quantum by design: STARK spend proofs over Poseidon2, X-Wing note
           encryption, and ML-DSA-65 for node identities and the team's checkpoints. Test coins, with no value.

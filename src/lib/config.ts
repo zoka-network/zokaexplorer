@@ -1,7 +1,7 @@
 // ZokaScan reads the public, read-only API of a Zoka node (`quantic-pq-node
 // serve --public-api`): in production the team's explorer node, published by
 // a tunnel at api.zokascan.cc; in development the one running on this PC.
-export const CHAIN_ID = "zoka-quantic-testnet-v2";
+export const CHAIN_ID = "zoka-quantic-testnet-v3";
 export const NETWORK_LABEL = "Zoka Quantic Testnet";
 export const ADDRESS_PREFIX = "zqtest2";
 // What `quantic-pq-wallet show-view-key` prints on this network.

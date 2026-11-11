@@ -40,7 +40,7 @@ const Index = () => {
   return (
     <Layout>
       <section className="scan-hero">
-        <div className="scan-eyebrow">Zoka Quantic Testnet · STARK v2</div>
+        <div className="scan-eyebrow">Zoka Quantic Testnet v3 · STARK</div>
         <h1 className="scan-title">The explorer of Zoka Quantic.</h1>
         <p className="scan-lede">
           Blocks, transactions, difficulty and the team's checkpoints, read live from a Zoka node. Payments are
